@@ -11,21 +11,22 @@
     <h1>Grade Calculator</h1>
     <form id="gradeForm" onsubmit="return false;">
         <label for="prelim_grade">Enter your Preliminary Grade:</label>
-        <input type="number" id="prelim_grade" name="prelim_grade" required>
+        <input type="number" id="prelim_grade" name="prelim_grade" min="0" max="100" required>
         <button type="submit" id="calculateButton">Calculate</button>
     </form>
     <div id="result"></div>
 
     <py-script>
+        from pyscript import Element
+
         def calculate_required_grades(prelim_grade):
             passing_grade = 75
             prelim_weight = 0.20
             midterm_weight = 0.30
             final_weight = 0.50
-            grade_range = (0, 100)
             deanslist_grade = 90
 
-            if not (grade_range[0] <= prelim_grade <= grade_range[1]):
+            if not (0 <= prelim_grade <= 100):
                 return "Error: Preliminary grade must be between 0 and 100."
 
             current_total = prelim_grade * prelim_weight
@@ -46,9 +47,6 @@
                 if min_required_average > 100:
                     return "Error: Achieving the passing grade is not possible with this preliminary score."
 
-                if min_required_average < grade_range[0]:
-                    min_required_average = grade_range[0]
-
                 deanslist_total = deanslist_grade - current_total
                 min_deanslist_average = deanslist_total / (midterm_weight + final_weight)
 
@@ -58,14 +56,14 @@
             return message
 
         def calculate(event):
-            prelim_grade = float(document.getElementById('prelim_grade').value)
+            prelim_grade = float(Element("prelim_grade").element.value)
             result_message = calculate_required_grades(prelim_grade)
-            document.getElementById('result').innerText = result_message
+            Element("result").element.innerText = result_message
 
         # Attach the calculate function to the button click
-        from pyscript import Element
         calculate_button = Element("calculateButton")
         calculate_button.element.onclick = calculate
     </py-script>
 </body>
 </html>
+
