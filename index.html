@@ -3,66 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grade Calculator</title>
-    <link rel="stylesheet" href="style.css">
+    <title>College Grade Calculator</title>
+    <!-- Include PyScript -->
+    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
     <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Verdana', sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        input[type="number"],
+        button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+            border: none;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 400px;
+        }
+
+        .close {
+            cursor: pointer;
+            color: #333;
+            float: right;
+            font-size: 20px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Grade Calculator</h1>
-    <form id="gradeForm" onsubmit="return false;">
-        <label for="prelim_grade">Enter your Preliminary Grade:</label>
-        <input type="number" id="prelim_grade" name="prelim_grade" min="0" max="100" required>
-        <button type="submit" id="calculateButton">Calculate</button>
-    </form>
-    <div id="result"></div>
+    <div class="container">
+        <h1>College Grade Calculator</h1>
+        <input type="number" id="prelimExam" placeholder="Enter Prelim Exam Grade (0-100)" min="0" max="100" step="0.01" required>
+        <button id="calculateBtn">Calculate</button>
+    </div>
+
+    <!-- The Modal -->
+    <div id="resultModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeModal">&times;</span>
+            <h2>Calculation Results</h2>
+            <p><b>Prelim Grade:</b> <span id="prelimGrade"></span></p>
+            <p><b>To pass with 75%, you need a Midterm grade of:</b> <span id="midtermGrade"></span> and a Final grade of <span id="finalGrade"></span></p>
+            <p><b>To achieve 90%, you need a Midterm grade of:</b> <span id="midtermGrade2"></span> and a Final grade of <span id="finalGrade2"></span></p>
+            <button id="closeModalBtn">Close</button>
+        </div>
+    </div>
 
     <py-script>
         from pyscript import Element
 
-        def calculate_required_grades(prelim_grade):
+        async def calculate_grade(event):
+            # Clear previous results
+            Element("prelimGrade").element.innerHTML = "N/A"
+            Element("midtermGrade").element.innerHTML = "N/A"
+            Element("finalGrade").element.innerHTML = "N/A"
+            Element("midtermGrade2").element.innerHTML = "N/A"
+            Element("finalGrade2").element.innerHTML = "N/A"
+
+            try:
+                prelim_exam = float(Element("prelimExam").element.value.strip())
+
+                # Validate input
+                if not (0 <= prelim_exam <= 100):
+                    raise ValueError("Prelim Exam Grade must be between 0 and 100.")
+
+            except ValueError as e:
+                Element("prelimGrade").element.innerHTML = str(e)
+                return
+
+            # Calculate required grades
+            prelim_percent = 0.20
+            midterm_percent = 0.30
+            final_percent = 0.50
+
             passing_grade = 75
-            prelim_weight = 0.20
-            midterm_weight = 0.30
-            final_weight = 0.50
-            deanslist_grade = 90
+            deanslist_grade = 90  # For Dean's Lister
 
-            if not (0 <= prelim_grade <= 100):
-                return "Error: Preliminary grade must be between 0 and 100."
+            current_total = prelim_exam * prelim_percent
+            required_total_pass = passing_grade - current_total
+            required_total_deanslist = deanslist_grade - current_total
 
-            current_total = prelim_grade * prelim_weight
-            required_total = passing_grade - current_total
-            min_required_average = required_total / (midterm_weight + final_weight)
+            required_midterm_and_final_pass = max(0, required_total_pass / (midterm_percent + final_percent))
+            required_midterm_and_final_deanslist = max(0, required_total_deanslist / (midterm_percent + final_percent))
 
-            message = ""
+            # Update UI with results
+            Element("prelimGrade").element.innerHTML = f"{prelim_exam:.2f}%"
+            Element("midtermGrade").element.innerHTML = f"{required_midterm_and_final_pass:.2f}%"
+            Element("finalGrade").element.innerHTML = f"{required_midterm_and_final_pass:.2f}%"
+            Element("midtermGrade2").element.innerHTML = f"{required_midterm_and_final_deanslist:.2f}%"
+            Element("finalGrade2").element.innerHTML = f"{required_midterm_and_final_deanslist:.2f}%"
 
-            if prelim_grade >= passing_grade:
-                message += f"You need a {min_required_average:.2f}% average on the Midterms and Finals to pass."
-                if prelim_grade >= deanslist_grade:
-                    message += " You already qualify for Dean's Lister! Keep up the great work!"
-                else:
-                    deanslist_total = deanslist_grade - current_total
-                    min_deanslist_average = deanslist_total / (midterm_weight + final_weight)
-                    message += f" To qualify for Dean's Lister, you need a Midterm grade of {min_deanslist_average:.2f}% and a Final grade of {min_deanslist_average:.2f}%."
-            else:
-                if min_required_average > 100:
-                    return "Error: Achieving the passing grade is not possible with this preliminary score."
+            # Show modal
+            Element("resultModal").element.style.display = "flex"
 
-                deanslist_total = deanslist_grade - current_total
-                min_deanslist_average = deanslist_total / (midterm_weight + final_weight)
+        # Bind event to button click
+        Element("calculateBtn").element.onclick = calculate_grade
 
-                message += f"You need a {min_required_average:.2f}% average on the Midterms and Finals to pass. "
-                message += f"You need a Midterm grade of {min_deanslist_average:.2f}% and a Final grade of {min_deanslist_average:.2f}% to qualify for Dean's Lister."
+        # Modal close functionality
+        def close_modal(event):
+            Element("resultModal").element.style.display = "none"
 
-            return message
-
-        def calculate(event):
-            prelim_grade = float(Element("prelim_grade").element.value)
-            result_message = calculate_required_grades(prelim_grade)
-            Element("result").element.innerText = result_message
-
-        # Attach the calculate function to the button click
-        calculate_button = Element("calculateButton")
-        calculate_button.element.onclick = calculate
+        Element("closeModal").element.onclick = close_modal
+        Element("closeModalBtn").element.onclick = close_modal
     </py-script>
 </body>
 </html>
